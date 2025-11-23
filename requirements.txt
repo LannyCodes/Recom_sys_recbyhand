@@ -1,9 +1,9 @@
-torch==1.13.1
+torch
 tqdm
 pandas
 matplotlib
 gensim
-networkx==2.6.3
-node2vec==0.4.4
+networkx
+node2vec
 scikit-learn
 

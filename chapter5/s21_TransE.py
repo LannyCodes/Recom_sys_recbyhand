@@ -1,6 +1,11 @@
 import torch
 from torch import nn
-from chapter5 import dataloader4kge
+import os, sys
+try:
+    from chapter5 import dataloader4kge
+except ModuleNotFoundError:
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    from chapter5 import dataloader4kge
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
