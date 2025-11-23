@@ -3,6 +3,7 @@ from torch import nn
 from chapter5 import dataloader4kge
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class TransE( nn.Module ):
 
@@ -42,19 +43,31 @@ def train( epochs = 20, batchSize = 1024, lr = 0.01, dim = 128 ):
     train_set = dataloader4kge.KgDatasetWithNegativeSampling( triples, entitys )
     #初始化模型
     net = TransE( max( entitys ) + 1 , max( relation ) + 1, dim )
+    net = net.to( device )
     #初始化优化器
     optimizer = torch.optim.AdamW( net.parameters(), lr = lr, weight_decay = 5e-3 )
     #开始训练
     for e in range(epochs):
         net.train()
         all_lose = 0
-        for X in tqdm( DataLoader( train_set, batch_size = batchSize, shuffle = True )):
+        for X in tqdm( DataLoader( 
+                train_set, 
+                batch_size = batchSize, 
+                shuffle = True,
+                num_workers = 2,
+                pin_memory = ( device.type == 'cuda' ),
+                persistent_workers = True
+            )):
             optimizer.zero_grad( )
-            loss = net( X )
+            x_pos, x_neg = X
+            x_pos = tuple( t.to( device, non_blocking = True ) for t in x_pos )
+            x_neg = tuple( t.to( device, non_blocking = True ) for t in x_neg )
+            loss = net( ( x_pos, x_neg ) )
             all_lose += loss
             loss.backward( )
             optimizer.step( )
-        print('epoch {},avg_loss={:.4f}'.format( e, all_lose/( len( triples ))))
+        avg_loss = ( all_lose / len( triples ) ).item() if hasattr( all_lose, 'item' ) else all_lose / len( triples )
+        print('epoch {},avg_loss={:.4f}'.format( e, avg_loss ))
 
 
 if __name__ == '__main__':
