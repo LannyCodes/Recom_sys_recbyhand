@@ -20,9 +20,9 @@ class TransE( nn.Module ):
         self.dim = dim #embedding的长度
 
         # 随机初始化实体的embedding
-        self.e = nn.Embedding( self.n_entitys, dim, max_norm = 1 )
+        self.e = nn.Embedding( self.n_entitys, dim )
         # 随机初始化关系的embedding
-        self.r = nn.Embedding( self.n_relations, dim, max_norm = 1 )
+        self.r = nn.Embedding( self.n_relations, dim )
 
     def forward( self, X ):
         x_pos, x_neg = X
@@ -71,6 +71,9 @@ def train( epochs = 20, batchSize = 1024, lr = 0.01, dim = 128 ):
             all_lose += loss
             loss.backward( )
             optimizer.step( )
+            with torch.no_grad():
+                net.e.weight.renorm_(p=2, dim=0, maxnorm=1.0)
+                net.r.weight.renorm_(p=2, dim=0, maxnorm=1.0)
         avg_loss = ( all_lose / len( triples ) ).item() if hasattr( all_lose, 'item' ) else all_lose / len( triples )
         print('epoch {},avg_loss={:.4f}'.format( e, avg_loss ))
 
